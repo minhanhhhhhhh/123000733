@@ -207,26 +207,18 @@ with col2:
 # HIỂN THỊ BẢNG KẾT QUẢ & DOWNLOAD
 # ============================================================================
 
-# TODO 16: Định nghĩa display_cols trước khi sử dụng
-display_cols = ["id", "text", "tokenized", "spam_label", "spam_label_vn", 
-                "sentiment_label", "sentiment_label_vn"]
-
-st.subheader("📋 Kết quả chi tiết")
+# Hiển thị bảng kết quả
+st.subheader("Kết quả chi tiết")
+display_cols = ["id", "text", "tokenized", "spam_label", "spam_label_vn", "sentiment_label", "sentiment_label_vn"]
 st.dataframe(df[display_cols], use_container_width=True)
 
-# TODO 16: Xuất CSV và tạo nút download
-output_df = df[display_cols].copy()
-output_df = output_df.astype(str)   # Đảm bảo mọi cột đều là text
-
-csv_data = output_df.to_csv(
-    index=False, 
-    encoding="utf-8-sig"   # Quan trọng nhất: utf-8-sig (có BOM) để Excel đọc đúng
-)
+# TODO 16: Xuất CSV và tạo nút download - Fix lỗi font tiếng Việt triệt để
+csv_string = df[display_cols].to_csv(index=False, encoding="utf-8-sig")
+csv_bytes = csv_string.encode("utf-8-sig")
 
 st.download_button(
-    label="⬇ Tải về file kết quả (CSV - hỗ trợ tiếng Việt)",
-    data=csv_data,
+    label="Tải về file kết quả (CSV)",
+    data=csv_bytes,
     file_name="auto_labels_output.csv",
-    mime="text/csv",
-    help="Mở bằng Excel: File → Import → chọn UTF-8 hoặc mở trực tiếp thường sẽ đúng font"
+    mime="text/csv"
 )
