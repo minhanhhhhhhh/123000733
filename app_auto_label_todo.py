@@ -132,29 +132,101 @@ progress.empty()
 st.success("Hoàn tất xử lý!")
 
 # ============================================================================
-# HIỂN THỊ THỐNG KÊ & KẾT QUẢ
+# HIỂN THỊ THỐNG KÊ & KẾT QUẢ   ←   TODO 15 (ĐÃ SỬA)
 # ============================================================================
 
-# TODO 15: Hiển thị biểu đồ thống kê cảm xúc và spam
-st.subheader("Thống kê kết quả")
+st.subheader("📊 Thống kê kết quả")
+
 col1, col2 = st.columns(2)
 
+# ==================== BIỂU ĐỒ CẢM XÚC ====================
 with col1:
-    st.bar_chart(df["sentiment_label_vn"].value_counts())
+    st.markdown("### 📈 Phân bố cảm xúc")
 
+    sentiment_counts = df["sentiment_label_vn"].value_counts().reset_index()
+    sentiment_counts.columns = ["Cảm xúc", "Số lượng"]
+
+    emoji_map = {
+        "Tích cực": "😊",
+        "Tiêu cực": "😠",
+        "Trung lập": "😐"
+    }
+
+    sentiment_counts["Cảm xúc"] = sentiment_counts["Cảm xúc"].map(
+        lambda x: f"{emoji_map.get(x, '❓')} {x}"
+    )
+
+    import altair as alt
+
+    sentiment_chart = alt.Chart(sentiment_counts).mark_bar().encode(
+        x=alt.X("Cảm xúc:N", sort=None, axis=alt.Axis(labelFontSize=14, labelAngle=0)),
+        y=alt.Y("Số lượng:Q", title="Số lượng bình luận"),
+        color=alt.Color("Cảm xúc:N", 
+                       scale=alt.Scale(range=["#9E9E9E","#4CAF50", "#f44336" ]), 
+                       legend=None),
+        tooltip=["Cảm xúc", "Số lượng"]
+    ).properties(
+        title="Phân bố cảm xúc",
+        height=380
+    )
+
+    st.altair_chart(sentiment_chart, use_container_width=True)
+
+# ==================== BIỂU ĐỒ SPAM (ĐÃ SỬA - thêm icon) ====================
 with col2:
-    st.bar_chart(df["spam_label_vn"].value_counts())
+    st.markdown("### 🚫 Phân bố Spam / Không spam")
 
-# Hiển thị bảng kết quả
-st.subheader("Kết quả chi tiết")
-display_cols = ["id", "text", "tokenized", "spam_label", "spam_label_vn", "sentiment_label", "sentiment_label_vn"]
+    spam_counts = df["spam_label_vn"].value_counts().reset_index()
+    spam_counts.columns = ["Loại", "Số lượng"]
+
+    spam_emoji_map = {
+        "Spam": "🚫",
+        "Không spam": "✅"
+    }
+
+    spam_counts["Loại"] = spam_counts["Loại"].map(
+        lambda x: f"{spam_emoji_map.get(x, '❓')} {x}"
+    )
+
+    spam_chart = alt.Chart(spam_counts).mark_bar().encode(
+        x=alt.X("Loại:N", sort=None, axis=alt.Axis(labelFontSize=14, labelAngle=0)),
+        y=alt.Y("Số lượng:Q", title="Số lượng bình luận"),
+        color=alt.Color("Loại:N", 
+                       scale=alt.Scale(range=["#4CAF50","#f44336"]), 
+                       legend=None),
+        tooltip=["Loại", "Số lượng"]
+    ).properties(
+        title="Phân bố Spam",
+        height=380
+    )
+
+    st.altair_chart(spam_chart, use_container_width=True)
+
+
+# ============================================================================
+# HIỂN THỊ BẢNG KẾT QUẢ & DOWNLOAD
+# ============================================================================
+
+# TODO 16: Định nghĩa display_cols trước khi sử dụng
+display_cols = ["id", "text", "tokenized", "spam_label", "spam_label_vn", 
+                "sentiment_label", "sentiment_label_vn"]
+
+st.subheader("📋 Kết quả chi tiết")
 st.dataframe(df[display_cols], use_container_width=True)
 
 # TODO 16: Xuất CSV và tạo nút download
-csv_data = df[display_cols].to_csv(index=False, encoding="utf-8")
+output_df = df[display_cols].copy()
+output_df = output_df.astype(str)   # Đảm bảo mọi cột đều là text
+
+csv_data = output_df.to_csv(
+    index=False, 
+    encoding="utf-8-sig"   # Quan trọng nhất: utf-8-sig (có BOM) để Excel đọc đúng
+)
+
 st.download_button(
-    label="⬇ Tải về file kết quả",
+    label="⬇ Tải về file kết quả (CSV - hỗ trợ tiếng Việt)",
     data=csv_data,
     file_name="auto_labels_output.csv",
-    mime="text/csv"
+    mime="text/csv",
+    help="Mở bằng Excel: File → Import → chọn UTF-8 hoặc mở trực tiếp thường sẽ đúng font"
 )
